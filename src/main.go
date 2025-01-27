@@ -13,6 +13,8 @@ import (
 type Set map[string]struct {
 }
 
+type Broken map[string]int
+
 func NewSet() Set {
 	return make(Set)
 }
@@ -134,4 +136,28 @@ func main() {
 	for key, value := range result {
 		fmt.Printf("%s: %s\n", key, value)
 	}
+	const REQ_URL_PREFIX = "http://localhost:8080"
+
+	broken := make(Broken)
+	for key, _ := range result {
+		res, err := http.Get(REQ_URL_PREFIX + key)
+
+		if err != nil {
+
+			fmt.Printf("error making http request: %s\n", err)
+			os.Exit(1)
+		}
+		if res.StatusCode != 200 {
+
+			broken[key] = res.StatusCode
+
+		}
+
+	}
+	fmt.Println()
+	fmt.Println("All discovered links:")
+	for key, value := range broken {
+		fmt.Printf("%s: %v\n", key, value)
+	}
+
 }
