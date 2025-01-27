@@ -52,7 +52,7 @@ func TestParser(t *testing.T) {
 				t.Errorf("HtmlParser() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			for k, _ := range got {
+			for k := range got {
 
 				if k != tt.want {
 					t.Errorf("HtmlParser() = %v, want %v", got, tt.want)

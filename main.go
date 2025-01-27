@@ -93,7 +93,7 @@ func scraper(current_page Set, all_links Set, iter int32) Set {
 	current_count := all_links.Count()
 	if all_links.Count() != 0 {
 
-		for k, _ := range current_page {
+		for k := range current_page {
 			all_links.Add(k)
 		}
 		if current_count == all_links.Count() {
@@ -101,12 +101,12 @@ func scraper(current_page Set, all_links Set, iter int32) Set {
 		}
 
 	} else {
-		for k, _ := range current_page {
+		for k := range current_page {
 			all_links.Add(k)
 		}
 
 	}
-	for k, _ := range current_page {
+	for k := range current_page {
 		if IsValidUrl(k) {
 			body, err := GetHtml(k)
 			if err != nil {
@@ -139,7 +139,7 @@ func main() {
 	const REQ_URL_PREFIX = "http://localhost:8080"
 
 	broken := make(Broken)
-	for key, _ := range result {
+	for key := range result {
 		res, err := http.Get(REQ_URL_PREFIX + key)
 
 		if err != nil {
