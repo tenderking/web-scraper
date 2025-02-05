@@ -17,20 +17,20 @@ func handlerScraper(cmd cmd.Command) error {
 	scraperURL := cmd.Args[0]
 	result := scraper.ScrapeWebsite(init, scraper.NewSet(), 0, scraperURL)
 	fmt.Println("All discovered links:")
-	for key := range result { // Iterate over keys of the set
-		fmt.Println(key) // Print only the key since the value is an empty struct
+	for key := range result {
+		fmt.Println(key)
 	}
 	broken := make(scraper.Broken)
 	for key := range result {
 		res, err := http.Get(scraperURL + key)
 		if err != nil {
 			fmt.Printf("error making http request: %s\n", err)
-			continue // Don't exit, continue checking other links
+			continue
 		}
 		if res.StatusCode != 200 {
 			broken[key] = res.StatusCode
 		}
-		res.Body.Close() // Close the response body to prevent resource leaks
+		_ = res.Body.Close()
 	}
 	fmt.Println()
 	fmt.Println("Broken links:")
