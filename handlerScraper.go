@@ -9,7 +9,7 @@ import (
 
 func handlerScraper(cmd cmd.Command) error {
 	if len(cmd.Args) != 1 {
-		return fmt.Errorf("usage: follow <feed-url>")
+		return fmt.Errorf("usage: scrape <feed-url>")
 	}
 
 	init := scraper.NewSet()
