@@ -1,4 +1,4 @@
-package main
+package scraper
 
 import (
 	"strings"
@@ -6,41 +6,39 @@ import (
 )
 
 func TestParser(t *testing.T) {
-
 	tests := []struct {
 		name    string
 		args    string
-		want    string
+		want    []string // Want a slice of strings for multiple links
 		wantErr bool
 	}{
 		{
 			name:    "Retrieve link",
 			args:    `<html><body><h1>Hello, Go!</h1><a href="/home">Home</a></body></html>`,
-			want:    "/home",
+			want:    []string{"/home"},
 			wantErr: false,
 		},
-		{name: "Return the valid link",
+		{
+			name: "Multiple links",
 			args: `<a href="#">This link points to nothing</a>
-						<a href="/about">This link points to an internal page</a>
-						<a href="https://youtube.com">This link points to an external page</a>
-						`,
-			want:    "/about",
+                                        <a href="/about">This link points to an internal page</a>
+                                        <a href="https://youtube.com">This link points to an external page</a>`,
+			want:    []string{"/about"},
 			wantErr: false,
 		},
-		{name: "Return the valid link",
+		{
+			name: "No valid link",
 			args: `<a>This link points to nothing</a>
-						<a href="/about">This link points to an internal page</a>
-						<a href="https://youtube.com">This link points to an external page</a>
-						`,
-			want:    "/about",
+                                        <a>This link points to nothing</a>`,
+			want:    []string{}, // Expect an empty set
 			wantErr: false,
 		},
-		{name: "Return the valid link when class",
-			args: `<a>This link points to nothing</a>
-						<a href="/about">This link points to an internal page</a>
-						<a class="text-teal-400 hover:text-teal-200" href="https://youtube.com">This link points to an external page</a>
-						`,
-			want:    "/about",
+		{
+			name: "Valid link with class",
+			args: `<a href="#">This link points to nothing</a>
+                                        <a href="/about">This link points to an internal page</a>
+                                        <a class="text-teal-400 hover:text-teal-200" href="https://youtube.com">This link points to an external page</a>`,
+			want:    []string{"/about"},
 			wantErr: false,
 		},
 	}
@@ -52,10 +50,27 @@ func TestParser(t *testing.T) {
 				t.Errorf("HtmlParser() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			for k := range got {
 
-				if k != tt.want {
-					t.Errorf("HtmlParser() = %v, want %v", got, tt.want)
+			// Convert the Set to a slice for easier comparison
+			gotSlice := make([]string, 0, len(got))
+			for k := range got {
+				gotSlice = append(gotSlice, k)
+			}
+
+			if len(gotSlice) != len(tt.want) {
+				t.Errorf("HtmlParser() returned %d links, want %d", len(gotSlice), len(tt.want))
+			}
+
+			for _, wantLink := range tt.want {
+				found := false
+				for _, gotLink := range gotSlice {
+					if gotLink == wantLink {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Errorf("HtmlParser() did not return expected link: %s", wantLink)
 				}
 			}
 		})
@@ -63,7 +78,6 @@ func TestParser(t *testing.T) {
 }
 
 func TestValidUrl(t *testing.T) {
-
 	tests := []struct {
 		name    string
 		args    string
@@ -98,16 +112,14 @@ func TestValidUrl(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := IsValidUrl(tt.args)
-
 			if got != tt.want {
-				t.Errorf("HtmlParser() = %v, want %v", got, tt.want)
+				t.Errorf("IsValidUrl(%q) = %v, want %v", tt.args, got, tt.want) // More informative error message
 			}
 		})
 	}
 }
 
 func TestSetCount(t *testing.T) {
-
 	tests := []struct {
 		name    string
 		args    Set
@@ -119,28 +131,30 @@ func TestSetCount(t *testing.T) {
 			args:    Set{"/a": {}, "/b": {}},
 			want:    2,
 			wantErr: false,
-		}}
+		},
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.args.Count()
-
 			if got != tt.want {
-				t.Errorf("HtmlParser() = %v, want %v", got, tt.want)
+				t.Errorf("Set.Count() = %v, want %v", got, tt.want) // More informative error message
 			}
 		})
 	}
+
 	tests_2 := []struct {
 		name    string
-		args    [2]string
+		args    []string // Use a slice for clarity
 		want    int
 		wantErr bool
 	}{
 		{
-			name:    "items count",
-			args:    [...]string{"/a", "b"},
+			name:    "items count from slice",
+			args:    []string{"/a", "b"},
 			want:    2,
 			wantErr: false,
-		}}
+		},
+	}
 
 	for _, tt := range tests_2 {
 		new_set := NewSet()
@@ -151,9 +165,8 @@ func TestSetCount(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := new_set.Count()
 			if got != tt.want {
-				t.Errorf("HtmlParser() = %v, want %v", got, tt.want)
+				t.Errorf("Set.Count() from slice = %v, want %v", got, tt.want) // More informative error message
 			}
 		})
 	}
-
 }

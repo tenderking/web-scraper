@@ -29,3 +29,5 @@ pkg/
 
 # macOS
 .DS_Store
+
+web-scraper
