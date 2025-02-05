@@ -3,6 +3,7 @@ package main
 import (
 	"strings"
 	"testing"
+	"web-scraper/internal/scraper"
 )
 
 func TestParser(t *testing.T) {
@@ -47,7 +48,7 @@ func TestParser(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rv := strings.NewReader(tt.args)
-			got, err := HtmlParser(rv)
+			got, err := scraper.HtmlParser(rv)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("HtmlParser() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -97,7 +98,7 @@ func TestValidUrl(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := IsValidUrl(tt.args)
+			got := scraper.IsValidUrl(tt.args)
 
 			if got != tt.want {
 				t.Errorf("HtmlParser() = %v, want %v", got, tt.want)
@@ -110,13 +111,13 @@ func TestSetCount(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		args    Set
+		args    scraper.Set
 		want    int
 		wantErr bool
 	}{
 		{
 			name:    "items count",
-			args:    Set{"/a": {}, "/b": {}},
+			args:    scraper.Set{"/a": {}, "/b": {}},
 			want:    2,
 			wantErr: false,
 		}}
@@ -143,7 +144,7 @@ func TestSetCount(t *testing.T) {
 		}}
 
 	for _, tt := range tests_2 {
-		new_set := NewSet()
+		new_set := scraper.NewSet()
 		for _, k := range tt.args {
 			new_set.Add(k)
 		}
