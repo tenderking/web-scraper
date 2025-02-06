@@ -53,7 +53,7 @@ func TestParser(t *testing.T) {
 
 			// Convert the Set to a slice for easier comparison
 			gotSlice := make([]string, 0, len(got))
-			for k := range got {
+			for _, k := range got {
 				gotSlice = append(gotSlice, k)
 			}
 
@@ -114,58 +114,6 @@ func TestValidUrl(t *testing.T) {
 			got := IsValidUrl(tt.args)
 			if got != tt.want {
 				t.Errorf("IsValidUrl(%q) = %v, want %v", tt.args, got, tt.want) // More informative error message
-			}
-		})
-	}
-}
-
-func TestSetCount(t *testing.T) {
-	tests := []struct {
-		name    string
-		args    Set
-		want    int
-		wantErr bool
-	}{
-		{
-			name:    "items count",
-			args:    Set{"/a": {}, "/b": {}},
-			want:    2,
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := tt.args.Count()
-			if got != tt.want {
-				t.Errorf("Set.Count() = %v, want %v", got, tt.want) // More informative error message
-			}
-		})
-	}
-
-	tests_2 := []struct {
-		name    string
-		args    []string // Use a slice for clarity
-		want    int
-		wantErr bool
-	}{
-		{
-			name:    "items count from slice",
-			args:    []string{"/a", "b"},
-			want:    2,
-			wantErr: false,
-		},
-	}
-
-	for _, tt := range tests_2 {
-		new_set := NewSet()
-		for _, k := range tt.args {
-			new_set.Add(k)
-		}
-
-		t.Run(tt.name, func(t *testing.T) {
-			got := new_set.Count()
-			if got != tt.want {
-				t.Errorf("Set.Count() from slice = %v, want %v", got, tt.want) // More informative error message
 			}
 		})
 	}

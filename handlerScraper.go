@@ -12,13 +12,13 @@ func handlerScraper(cmd cmd.Command) error {
 		return fmt.Errorf("usage: scrape <feed-url>")
 	}
 
-	init := scraper.NewSet()
-	init.Add("/")
+	init := scraper.NewRoute()
+	init.Add("/", []string{})
 	scraperURL := cmd.Args[0]
-	result := scraper.ScrapeWebsite(init, scraper.NewSet(), 0, scraperURL)
+	result := scraper.ScrapeWebsite(init, scraper.NewRoute(), scraperURL)
 	fmt.Println("All discovered links:")
-	for key := range result {
-		fmt.Println(key)
+	for key, val := range result {
+		fmt.Println(key, val)
 	}
 	broken := make(scraper.Broken)
 	for key := range result {

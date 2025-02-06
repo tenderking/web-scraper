@@ -4,57 +4,70 @@ import (
 	"fmt"
 )
 
-// ScrapeWebsite recursively scrapes a website up to a maximum depth (maxIterations).
-// It starts with an initial set of URLs (currentPage) and maintains a set of all
-// discovered links (allLinks).
-func ScrapeWebsite(currentPage, allLinks Set, iteration int32, urlPrefix string) Set {
-	const maxIterations = 50
-
-	// Base Cases:
-	// 1. Stop if we've reached the maximum iteration depth.
-	if iteration > maxIterations {
-		return allLinks
-	}
-
-	// 2. Stop if no new links were found in the previous iteration.
-	initialLinkCount := allLinks.Count()
-	for link := range currentPage {
-		allLinks.Add(link)
-	}
-	if initialLinkCount == allLinks.Count() && iteration > 0 {
-		return allLinks
-	}
-
-	// Recursive Step:
-	// Explore links found on the current page.
-	allLinks = scrapePageLinks(currentPage, urlPrefix, allLinks, iteration)
-
+func ScrapeWebsite(currentPage, allLinks Routes, urlPrefix string) Routes {
+	allLinks = scrapePageLinks(currentPage, urlPrefix, allLinks)
 	return allLinks
 }
 
 // scrapePageLinks iterates through a set of URLs (currentPage), fetches and parses
 // the HTML content of each, and recursively calls ScrapeWebsite to explore any
 // new links found.
-func scrapePageLinks(currentPage Set, urlPrefix string, allLinks Set, iteration int32) Set {
-	for url := range currentPage {
-		if !IsValidUrl(url) {
-			continue // Skip invalid URLs
-		}
+func scrapePageLinks(currentPage Routes, urlPrefix string, allLinks Routes) Routes {
+	for urlbase, urlList := range currentPage {
+		if len(urlList.SubRoutes) != 0 {
+			for _, url := range urlList.SubRoutes {
 
-		htmlContent, err := GetHtml(url, urlPrefix)
-		if err != nil {
-			fmt.Println("Error fetching URL:", err)
-			continue // Skip URLs that can't be fetched
-		}
+				if !IsValidUrl(url) || allLinks.Has(url) {
+					continue // Skip invalid URLs or URLs already processed
+				}
+				fmt.Println("Currently browsing url: ", url)
 
-		newLinks, err := HtmlParser(htmlContent)
-		if err != nil {
-			fmt.Println("Error parsing HTML:", err)
-			continue // Skip pages that can't be parsed
-		}
+				htmlContent, err := GetHtml(url, urlPrefix)
+				if err != nil {
+					fmt.Println("Error fetching URL:", err)
+					continue // Skip URLs that can't be fetched
+				}
 
-		// Recursively scrape the newly found links.
-		allLinks = ScrapeWebsite(newLinks, allLinks, iteration+1, urlPrefix)
+				newLinks, err := HtmlParser(htmlContent)
+				if err != nil {
+					fmt.Println("Error parsing HTML:", err)
+					continue // Skip pages that can't be parsed
+				}
+				allLinks.Add(url, newLinks)
+
+				routes := NewRoute()
+				routes.Add(url, newLinks)
+				fmt.Println("HTML routes:", routes)
+				// Recursively scrape the newly found links.
+				allLinks = ScrapeWebsite(routes, allLinks, urlPrefix)
+			}
+
+		} else {
+
+			if !IsValidUrl(urlbase) || allLinks.Has(urlbase) {
+				continue // Skip invalid URLs or URLs already processed
+			}
+			fmt.Println("Currently browsing url: ", urlbase)
+
+			htmlContent, err := GetHtml(urlbase, urlPrefix)
+			if err != nil {
+				fmt.Println("Error fetching URL:", err)
+				continue // Skip URLs that can't be fetched
+			}
+
+			newLinks, err := HtmlParser(htmlContent)
+			if err != nil {
+				fmt.Println("Error parsing HTML:", err)
+				continue // Skip pages that can't be parsed
+			}
+			allLinks.Add(urlbase, newLinks)
+
+			routes := NewRoute()
+			routes.Add(urlbase, newLinks)
+			fmt.Println("HTML routes:", routes)
+			// Recursively scrape the newly found links.
+			allLinks = ScrapeWebsite(routes, allLinks, urlPrefix)
+		}
 	}
 
 	return allLinks
