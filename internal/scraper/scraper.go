@@ -14,57 +14,38 @@ func ScrapeWebsite(currentPage, allLinks Routes, urlPrefix string) Routes {
 // new links found.
 func scrapePageLinks(currentPage Routes, urlPrefix string, allLinks Routes) Routes {
 	for urlbase, urlList := range currentPage {
-		if len(urlList.SubRoutes) != 0 {
-			for _, url := range urlList.SubRoutes {
+		// Create a slice of URLs to process.  If SubRoutes is empty,
+		// use a slice containing just the base URL.
+		urlsToProcess := urlList.SubRoutes
+		if len(urlsToProcess) == 0 {
+			urlsToProcess = []string{urlbase}
+		}
 
-				if !IsValidUrl(url) || allLinks.Has(url) {
-					continue // Skip invalid URLs or URLs already processed
-				}
-				fmt.Println("Currently browsing url: ", url)
-
-				htmlContent, err := GetHtml(url, urlPrefix)
-				if err != nil {
-					fmt.Println("Error fetching URL:", err)
-					continue // Skip URLs that can't be fetched
-				}
-
-				newLinks, err := HtmlParser(htmlContent)
-				if err != nil {
-					fmt.Println("Error parsing HTML:", err)
-					continue // Skip pages that can't be parsed
-				}
-				allLinks.Add(url, newLinks)
-
-				routes := NewRoute()
-				routes.Add(url, newLinks)
-				fmt.Println("HTML routes:", routes)
-				// Recursively scrape the newly found links.
-				allLinks = ScrapeWebsite(routes, allLinks, urlPrefix)
+		for _, url := range urlsToProcess {
+			if !IsValidUrl(url) || allLinks.Has(url) {
+				continue // Skip invalid or already processed URLs
 			}
 
-		} else {
+			fmt.Println("Currently browsing url: ", url)
 
-			if !IsValidUrl(urlbase) || allLinks.Has(urlbase) {
-				continue // Skip invalid URLs or URLs already processed
-			}
-			fmt.Println("Currently browsing url: ", urlbase)
-
-			htmlContent, err := GetHtml(urlbase, urlPrefix)
+			htmlContent, err := GetHtml(url, urlPrefix)
 			if err != nil {
 				fmt.Println("Error fetching URL:", err)
-				continue // Skip URLs that can't be fetched
+				continue
 			}
 
 			newLinks, err := HtmlParser(htmlContent)
 			if err != nil {
 				fmt.Println("Error parsing HTML:", err)
-				continue // Skip pages that can't be parsed
+				continue
 			}
-			allLinks.Add(urlbase, newLinks)
+
+			allLinks.Add(url, newLinks) // Add the URL and its links to allLinks
 
 			routes := NewRoute()
-			routes.Add(urlbase, newLinks)
+			routes.Add(url, newLinks)
 			fmt.Println("HTML routes:", routes)
+
 			// Recursively scrape the newly found links.
 			allLinks = ScrapeWebsite(routes, allLinks, urlPrefix)
 		}

@@ -16,11 +16,12 @@ func handlerScraper(cmd cmd.Command) error {
 	init.Add("/", []string{})
 	scraperURL := cmd.Args[0]
 	result := scraper.ScrapeWebsite(init, scraper.NewRoute(), scraperURL)
-	fmt.Println("All discovered links:")
+	fmt.Println("All %n discovered links:", result.Count())
 	for key, val := range result {
 		fmt.Println(key, val)
 	}
 	broken := make(scraper.Broken)
+
 	for key := range result {
 		res, err := http.Get(scraperURL + key)
 		if err != nil {
