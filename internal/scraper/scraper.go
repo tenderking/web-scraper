@@ -2,6 +2,7 @@ package scraper
 
 import (
 	"fmt"
+	"sync"
 )
 
 func ScrapeWebsite(currentPage, allLinks Routes, urlPrefix string) Routes {
@@ -9,13 +10,13 @@ func ScrapeWebsite(currentPage, allLinks Routes, urlPrefix string) Routes {
 	return allLinks
 }
 
-// scrapePageLinks iterates through a set of URLs (currentPage), fetches and parses
-// the HTML content of each, and recursively calls ScrapeWebsite to explore any
-// new links found.
+// scrapePageLinks concurrently fetches and parses HTML content, recursively explores new links, and handles concurrency using WaitGroups
 func scrapePageLinks(currentPage Routes, urlPrefix string, allLinks Routes) Routes {
+	var mu sync.Mutex // Mutex to protect allLinks
+	var wg sync.WaitGroup
+
 	for urlbase, urlList := range currentPage {
-		// Create a slice of URLs to process.  If SubRoutes is empty,
-		// use a slice containing just the base URL.
+		// Prepare URLs to process
 		urlsToProcess := urlList.SubRoutes
 		if len(urlsToProcess) == 0 {
 			urlsToProcess = []string{urlbase}
@@ -26,30 +27,38 @@ func scrapePageLinks(currentPage Routes, urlPrefix string, allLinks Routes) Rout
 				continue // Skip invalid or already processed URLs
 			}
 
-			fmt.Println("Currently browsing url: ", url)
+			wg.Add(1)
+			go func(url string) {
+				defer wg.Done()
 
-			htmlContent, err := GetHtml(url, urlPrefix)
-			if err != nil {
-				fmt.Println("Error fetching URL:", err)
-				continue
-			}
+				fmt.Println("Currently browsing url: ", url)
 
-			newLinks, err := HtmlParser(htmlContent)
-			if err != nil {
-				fmt.Println("Error parsing HTML:", err)
-				continue
-			}
+				htmlContent, err := GetHtml(url, urlPrefix)
+				if err != nil {
+					fmt.Println("Error fetching URL:", err)
+					return
+				}
 
-			allLinks.Add(url, newLinks) // Add the URL and its links to allLinks
+				newLinks, err := HtmlParser(htmlContent)
+				if err != nil {
+					fmt.Println("Error parsing HTML:", err)
+					return
+				}
 
-			routes := NewRoute()
-			routes.Add(url, newLinks)
-			fmt.Println("HTML routes:", routes)
+				mu.Lock()
+				allLinks.Add(url, newLinks) // Add the URL and its links to allLinks
+				mu.Unlock()
 
-			// Recursively scrape the newly found links.
-			allLinks = ScrapeWebsite(routes, allLinks, urlPrefix)
+				routes := NewRoute()
+				routes.Add(url, newLinks)
+				//fmt.Println("HTML routes:", routes)  // Debugging - be careful with printing inside critical sections
+
+				// Recursively scrape the newly found links, BUT with concurrency limit.
+				scrapePageLinks(routes, urlPrefix, allLinks)
+
+			}(url)
+			wg.Wait()
 		}
 	}
-
 	return allLinks
 }
